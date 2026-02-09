@@ -3,10 +3,6 @@ const STORAGE_KEY = "priority_tasks_v1";
 const form = document.getElementById("task-form");
 const titleInput = document.getElementById("task-title");
 const prioritySelect = document.getElementById("task-priority");
-const finishByWrap = document.getElementById("task-finish-wrap");
-const finishByInput = document.getElementById("task-finish-by");
-const durationWrap = document.getElementById("task-duration-wrap");
-const durationInput = document.getElementById("task-duration");
 const listEl = document.getElementById("list");
 const emptyEl = document.getElementById("empty");
 const countEl = document.getElementById("count");
@@ -31,7 +27,8 @@ function loadTasks() {
         return parsed.map(t => ({
             ...t,
             finishBy: t.finishBy || t.dueDate || null,
-            durationMin: Number.isFinite(Number(t.durationMin)) ? Number(t.durationMin) : null
+            durationMin: Number.isFinite(Number(t.durationMin)) ? Number(t.durationMin) : null,
+            calendarTime: typeof t.calendarTime === "string" ? t.calendarTime : null
         }));
     } catch {
         return [];
@@ -60,7 +57,7 @@ function sortTasks(list) {
     if (mode === "newest") return [...list].sort(byCreatedDesc);
     if (mode === "oldest") return [...list].sort(byCreatedAsc);
     if (mode === "priority_asc") return [...list].sort(byPriorityAsc);
-    return [...list].sort(byPriorityDesc); // default: priority_desc
+    return [...list].sort(byPriorityDesc);
 }
 
 function visibleTasks() {
@@ -86,9 +83,7 @@ function render() {
     const regular = data.filter(t => t.priority !== 4);
 
     const ordered = [...extreme];
-    if (extreme.length && regular.length) {
-        ordered.push({ __divider: true });
-    }
+    if (extreme.length && regular.length) ordered.push({ __divider: true });
     ordered.push(...regular);
 
     for (const t of ordered) {
@@ -136,52 +131,6 @@ function render() {
 
         tags.appendChild(pill);
         tags.appendChild(time);
-
-        if (t.priority === 4) {
-            const finish = document.createElement("span");
-            finish.className = "due-pill";
-            if (t.finishBy) {
-                const finishDate = new Date(`${t.finishBy}T00:00:00`);
-                finish.textContent = `Finish by ${finishDate.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
-            } else {
-                finish.textContent = "No finish date";
-            }
-            tags.appendChild(finish);
-
-            const durationTag = document.createElement("span");
-            durationTag.className = "due-pill";
-            durationTag.textContent = t.durationMin ? `${t.durationMin} min` : "No duration";
-            tags.appendChild(durationTag);
-
-            const finishEdit = document.createElement("input");
-            finishEdit.className = "due-edit";
-            finishEdit.type = "date";
-            finishEdit.value = t.finishBy || "";
-            finishEdit.setAttribute("aria-label", `Set finish date for ${t.title}`);
-            finishEdit.onchange = () => updateExtremeFields(t.id, {
-                finishBy: finishEdit.value || null,
-                durationMin: t.durationMin || null
-            });
-            tags.appendChild(finishEdit);
-
-            const durationEdit = document.createElement("input");
-            durationEdit.className = "due-edit due-duration";
-            durationEdit.type = "number";
-            durationEdit.min = "15";
-            durationEdit.step = "15";
-            durationEdit.placeholder = "Min";
-            durationEdit.value = t.durationMin ? String(t.durationMin) : "";
-            durationEdit.setAttribute("aria-label", `Set duration in minutes for ${t.title}`);
-            durationEdit.onchange = () => {
-                const next = Number(durationEdit.value);
-                updateExtremeFields(t.id, {
-                    finishBy: t.finishBy || null,
-                    durationMin: Number.isFinite(next) && next > 0 ? next : null
-                });
-            };
-            tags.appendChild(durationEdit);
-        }
-
         tags.appendChild(priorityEdit);
 
         left.appendChild(title);
@@ -190,28 +139,28 @@ function render() {
         const actions = document.createElement("div");
         actions.className = "actions";
 
-        // Complete/Restore
+        if (t.priority === 4) {
+            const cal = document.createElement("div");
+            cal.className = "icon";
+            cal.title = "Open Calendar Setup";
+            cal.textContent = "📅";
+            cal.onclick = () => {
+                window.location.href = `calendar.html?task=${encodeURIComponent(t.id)}`;
+            };
+            actions.appendChild(cal);
+        }
+
         const toggle = document.createElement("div");
         toggle.className = "icon";
         toggle.title = t.completedAt ? "Restore" : "Mark complete";
         toggle.textContent = t.completedAt ? "↩️" : "✅";
         toggle.onclick = () => toggleComplete(t.id);
 
-        // Delete
         const del = document.createElement("div");
         del.className = "icon";
         del.title = "Delete";
         del.textContent = "🗑️";
         del.onclick = () => deleteTask(t.id);
-
-        if (t.priority === 4) {
-            const cal = document.createElement("div");
-            cal.className = "icon";
-            cal.title = "Add to Calendar (.ics)";
-            cal.textContent = "📅";
-            cal.onclick = () => downloadCalendarEvent(t);
-            actions.appendChild(cal);
-        }
 
         actions.appendChild(toggle);
         actions.appendChild(del);
@@ -222,100 +171,30 @@ function render() {
     }
 }
 
-function updatePriority(id, nextPriority) {
-    tasks = tasks.map(t => {
-        if (t.id !== id) return t;
-        if (nextPriority === 4) return { ...t, priority: nextPriority };
-        return { ...t, priority: nextPriority, finishBy: null, durationMin: null, dueDate: null };
-    });
-    saveTasks();
-    render();
-}
-
-function updateExtremeFields(id, next) {
-    tasks = tasks.map(t => {
-        if (t.id !== id) return t;
-        return { ...t, finishBy: next.finishBy, durationMin: next.durationMin };
-    });
-    saveTasks();
-    render();
-}
-
-function addTask(title, priority, finishBy, durationMin) {
+function addTask(title, priority) {
     const now = Date.now();
-    const hasDuration = Number.isFinite(durationMin) && durationMin > 0;
     tasks.unshift({
         id: uid(),
         title,
         priority,
         createdAt: now,
         completedAt: null,
-        finishBy: priority === 4 ? (finishBy || null) : null,
-        durationMin: priority === 4 && hasDuration ? durationMin : null
+        finishBy: null,
+        durationMin: null,
+        calendarTime: null
     });
     saveTasks();
     render();
 }
 
-function icsDateFromLocal(dateObj) {
-    const y = dateObj.getUTCFullYear();
-    const m = String(dateObj.getUTCMonth() + 1).padStart(2, "0");
-    const d = String(dateObj.getUTCDate()).padStart(2, "0");
-    const hh = String(dateObj.getUTCHours()).padStart(2, "0");
-    const mm = String(dateObj.getUTCMinutes()).padStart(2, "0");
-    const ss = String(dateObj.getUTCSeconds()).padStart(2, "0");
-    return `${y}${m}${d}T${hh}${mm}${ss}Z`;
-}
-
-function escapeIcsText(value) {
-    return String(value)
-        .replace(/\\/g, "\\\\")
-        .replace(/\n/g, "\\n")
-        .replace(/,/g, "\\,")
-        .replace(/;/g, "\\;");
-}
-
-function downloadCalendarEvent(task) {
-    if (!task.finishBy || !task.durationMin) {
-        alert("Set finish date and duration first.");
-        return;
-    }
-
-    const start = new Date(`${task.finishBy}T09:00:00`);
-    if (Number.isNaN(start.getTime())) {
-        alert("Invalid finish date.");
-        return;
-    }
-    const end = new Date(start.getTime() + task.durationMin * 60 * 1000);
-    const now = new Date();
-    const uidValue = `${task.id}@prioritytasks.local`;
-
-    const ics = [
-        "BEGIN:VCALENDAR",
-        "VERSION:2.0",
-        "PRODID:-//Priority Tasks//EN",
-        "CALSCALE:GREGORIAN",
-        "BEGIN:VEVENT",
-        `UID:${uidValue}`,
-        `DTSTAMP:${icsDateFromLocal(now)}`,
-        `DTSTART:${icsDateFromLocal(start)}`,
-        `DTEND:${icsDateFromLocal(end)}`,
-        `SUMMARY:${escapeIcsText(task.title)}`,
-        "DESCRIPTION:Created from Priority Tasks",
-        "END:VEVENT",
-        "END:VCALENDAR"
-    ].join("\r\n");
-
-    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const safeTitle = task.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "task";
-    a.href = url;
-    a.download = `${safeTitle}.ics`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+function updatePriority(id, nextPriority) {
+    tasks = tasks.map(t => {
+        if (t.id !== id) return t;
+        if (nextPriority === 4) return { ...t, priority: nextPriority };
+        return { ...t, priority: nextPriority, finishBy: null, durationMin: null, calendarTime: null, dueDate: null };
+    });
+    saveTasks();
+    render();
 }
 
 function toggleComplete(id) {
@@ -346,38 +225,20 @@ function setView(next) {
     render();
 }
 
-function syncExtremeFieldsVisibility() {
-    const isExtreme = Number(prioritySelect.value) === 4;
-    finishByWrap.classList.toggle("is-hidden", !isExtreme);
-    durationWrap.classList.toggle("is-hidden", !isExtreme);
-    finishByInput.required = isExtreme;
-    durationInput.required = isExtreme;
-}
-
-/* Events */
 form.addEventListener("submit", (e) => {
     e.preventDefault();
     const title = titleInput.value.trim();
     const priority = Number(prioritySelect.value);
-    const finishBy = finishByInput.value;
-    const durationMin = Number(durationInput.value);
-    if (priority === 4 && (!finishBy || !Number.isFinite(durationMin) || durationMin <= 0)) return;
     if (!title) return;
-    addTask(title, priority, finishBy, durationMin);
+    addTask(title, priority);
     titleInput.value = "";
-    finishByInput.value = "";
-    durationInput.value = "";
-    syncExtremeFieldsVisibility();
     titleInput.focus();
 });
 
-prioritySelect.addEventListener("change", syncExtremeFieldsVisibility);
 sortEl.addEventListener("change", render);
 clearCompletedBtn.addEventListener("click", clearCompleted);
 
 tabActive.addEventListener("click", () => setView("active"));
 tabCompleted.addEventListener("click", () => setView("completed"));
 
-/* Initial */
-syncExtremeFieldsVisibility();
 render();

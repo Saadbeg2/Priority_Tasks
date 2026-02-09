@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Calendar Setup - Priority Tasks</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <div class="container calendar-page">
+        <header class="header">
+            <div>
+                <h1>Calendar Setup</h1>
+                <p class="sub">Configure event details and download an .ics file.</p>
+            </div>
+            <a class="btn ghost back-link" href="index.html">Back to Tasks</a>
+        </header>
+
+        <main class="wrap">
+            <section class="card">
+                <p id="calendar-task-name" class="calendar-task-name"></p>
+
+                <form id="calendar-form" class="calendar-form">
+                    <label class="label" for="event-date">
+                        Date
+                        <input id="event-date" class="input" type="date" required />
+                    </label>
+
+                    <label class="label" for="event-time">
+                        Time
+                        <input id="event-time" class="input" type="time" value="09:00" required />
+                    </label>
+
+                    <label class="label" for="event-duration">
+                        Duration (minutes)
+                        <input id="event-duration" class="input" type="number" min="15" step="15" value="60" required />
+                    </label>
+
+                    <button class="btn primary" type="submit">Download .ics</button>
+                </form>
+
+                <p id="calendar-error" class="calendar-error" role="alert"></p>
+            </section>
+        </main>
+    </div>
+
+    <script src="calendar.js"></script>
+</body>
+
+</html>
