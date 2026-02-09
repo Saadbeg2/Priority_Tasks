@@ -9,60 +9,62 @@
 </head>
 
 <body>
-    <header class="header">
-        <div>
-            <h1>Priority Tasks</h1>
-            <p class="sub">Fast notes → prioritized list → done.</p>
-        </div>
+    <div class="container">
+        <header class="header">
+            <div>
+                <h1>Priority Tasks</h1>
+                <p class="sub">Fast notes → prioritized list → done.</p>
+            </div>
 
-        <div class="tabs" role="tablist" aria-label="Task views">
-            <button class="tab active" id="tab-active" type="button">Active</button>
-            <button class="tab" id="tab-completed" type="button">Completed</button>
-        </div>
-    </header>
+            <div class="tabs" role="tablist" aria-label="Task views">
+                <button class="tab active" id="tab-active" type="button">Active</button>
+                <button class="tab" id="tab-completed" type="button">Completed</button>
+            </div>
+        </header>
 
-    <main class="wrap">
-        <section class="card">
-            <form id="task-form" class="form">
-                <label class="label">
-                    Task
-                    <input id="task-title" class="input" type="text" placeholder="e.g., Find recruiter for Apple role"
-                        maxlength="140" required />
-                </label>
+        <main class="wrap">
+            <section class="card">
+                <form id="task-form" class="form">
+                    <label class="label">
+                        Task
+                        <input id="task-title" class="input" type="text" placeholder="e.g., Find recruiter for Apple role"
+                            maxlength="140" required />
+                    </label>
 
-                <label class="label">
-                    Priority
-                    <select id="task-priority" class="select">
-                        <option value="3">High</option>
-                        <option value="2" selected>Medium</option>
-                        <option value="1">Low</option>
+                    <label class="label">
+                        Priority
+                        <select id="task-priority" class="select">
+                            <option value="3">High</option>
+                            <option value="2" selected>Medium</option>
+                            <option value="1">Low</option>
+                        </select>
+                    </label>
+
+                    <button class="btn primary" type="submit">Add</button>
+                </form>
+
+                <div class="row">
+                    <input id="search" class="input" type="search" placeholder="Search tasks..." />
+                    <select id="sort" class="select">
+                        <option value="priority_desc" selected>Sort: Priority (High → Low)</option>
+                        <option value="priority_asc">Sort: Priority (Low → High)</option>
+                        <option value="newest">Sort: Newest</option>
+                        <option value="oldest">Sort: Oldest</option>
                     </select>
-                </label>
+                </div>
 
-                <button class="btn primary" type="submit">Add</button>
-            </form>
+                <div class="meta">
+                    <span id="count"></span>
+                    <button id="clear-completed" class="btn ghost" type="button">Clear completed</button>
+                </div>
+            </section>
 
-            <div class="row">
-                <input id="search" class="input" type="search" placeholder="Search tasks..." />
-                <select id="sort" class="select">
-                    <option value="priority_desc" selected>Sort: Priority (High → Low)</option>
-                    <option value="priority_asc">Sort: Priority (Low → High)</option>
-                    <option value="newest">Sort: Newest</option>
-                    <option value="oldest">Sort: Oldest</option>
-                </select>
-            </div>
-
-            <div class="meta">
-                <span id="count"></span>
-                <button id="clear-completed" class="btn ghost" type="button">Clear completed</button>
-            </div>
-        </section>
-
-        <section class="card">
-            <ul id="list" class="list" aria-live="polite"></ul>
-            <p id="empty" class="empty">No tasks yet.</p>
-        </section>
-    </main>
+            <section class="card">
+                <ul id="list" class="list" aria-live="polite"></ul>
+                <p id="empty" class="empty">No tasks yet.</p>
+            </section>
+        </main>
+    </div>
 
     <script src="app.js"></script>
 </body>
