@@ -121,6 +121,10 @@ h1 {
     font-size: 12px;
 }
 
+.is-hidden {
+    display: none;
+}
+
 .input,
 .select {
     width: 100%;
@@ -229,6 +233,7 @@ h1 {
 .tags {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: var(--space-1);
     color: var(--muted);
     font-size: 12px;
@@ -262,6 +267,16 @@ h1 {
     opacity: 0.92;
 }
 
+.due-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid #3a3a44;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--muted);
+}
+
 .actions {
     display: flex;
     gap: var(--space-1);
@@ -291,6 +306,27 @@ h1 {
 }
 
 .priority-edit:focus-visible {
+    outline: 2px solid #3f3f4a;
+    outline-offset: 2px;
+    border-color: #3f3f4a;
+}
+
+.due-edit {
+    min-height: 28px;
+    border: 1px solid #34343d;
+    border-radius: 999px;
+    background: #17171c;
+    color: var(--muted);
+    font-size: 11px;
+    padding: 2px 8px;
+    outline: none;
+}
+
+.due-duration {
+    width: 78px;
+}
+
+.due-edit:focus-visible {
     outline: 2px solid #3f3f4a;
     outline-offset: 2px;
     border-color: #3f3f4a;
@@ -372,7 +408,7 @@ h1 {
     }
 
     .form {
-        grid-template-columns: 1fr 160px 92px;
+        grid-template-columns: 1fr 160px 160px 140px 92px;
         align-items: end;
     }
 
