@@ -1,0 +1,197 @@
+const STORAGE_KEY = "priority_tasks_v1";
+
+const form = document.getElementById("task-form");
+const titleInput = document.getElementById("task-title");
+const prioritySelect = document.getElementById("task-priority");
+const listEl = document.getElementById("list");
+const emptyEl = document.getElementById("empty");
+const countEl = document.getElementById("count");
+const searchEl = document.getElementById("search");
+const sortEl = document.getElementById("sort");
+const clearCompletedBtn = document.getElementById("clear-completed");
+
+const tabActive = document.getElementById("tab-active");
+const tabCompleted = document.getElementById("tab-completed");
+
+let view = "active"; // "active" | "completed"
+let tasks = loadTasks();
+
+function uid() {
+    return crypto?.randomUUID?.() || String(Date.now()) + Math.random().toString(16).slice(2);
+}
+
+function loadTasks() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveTasks() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+}
+
+function priorityLabel(p) {
+    if (p === 3) return { text: "High", cls: "p-high" };
+    if (p === 2) return { text: "Medium", cls: "p-med" };
+    return { text: "Low", cls: "p-low" };
+}
+
+function sortTasks(list) {
+    const mode = sortEl.value;
+
+    const byCreatedAsc = (a, b) => a.createdAt - b.createdAt;
+    const byCreatedDesc = (a, b) => b.createdAt - a.createdAt;
+    const byPriorityDesc = (a, b) => (b.priority - a.priority) || byCreatedDesc(a, b);
+    const byPriorityAsc = (a, b) => (a.priority - b.priority) || byCreatedDesc(a, b);
+
+    if (mode === "newest") return [...list].sort(byCreatedDesc);
+    if (mode === "oldest") return [...list].sort(byCreatedAsc);
+    if (mode === "priority_asc") return [...list].sort(byPriorityAsc);
+    return [...list].sort(byPriorityDesc); // default: priority_desc
+}
+
+function filterTasks(list) {
+    const q = searchEl.value.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter(t => t.title.toLowerCase().includes(q));
+}
+
+function visibleTasks() {
+    const base = tasks.filter(t => view === "active" ? !t.completedAt : !!t.completedAt);
+    return sortTasks(filterTasks(base));
+}
+
+function render() {
+    const data = visibleTasks();
+    listEl.innerHTML = "";
+
+    emptyEl.style.display = data.length ? "none" : "block";
+
+    const activeCount = tasks.filter(t => !t.completedAt).length;
+    const completedCount = tasks.filter(t => !!t.completedAt).length;
+    countEl.textContent = view === "active"
+        ? `${activeCount} active`
+        : `${completedCount} completed`;
+
+    clearCompletedBtn.style.display = completedCount ? "inline-flex" : "none";
+
+    for (const t of data) {
+        const li = document.createElement("li");
+        li.className = "item" + (t.completedAt ? " done" : "");
+
+        const left = document.createElement("div");
+        left.className = "left";
+
+        const title = document.createElement("div");
+        title.className = "title";
+        title.textContent = t.title;
+
+        const tags = document.createElement("div");
+        tags.className = "tags";
+
+        const pill = document.createElement("span");
+        const { text, cls } = priorityLabel(t.priority);
+        pill.className = `pill ${cls}`;
+        pill.textContent = text;
+
+        const time = document.createElement("span");
+        const d = new Date(t.createdAt);
+        time.textContent = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+        tags.appendChild(pill);
+        tags.appendChild(time);
+
+        left.appendChild(title);
+        left.appendChild(tags);
+
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        // Complete/Restore
+        const toggle = document.createElement("div");
+        toggle.className = "icon";
+        toggle.title = t.completedAt ? "Restore" : "Mark complete";
+        toggle.textContent = t.completedAt ? "↩️" : "✅";
+        toggle.onclick = () => toggleComplete(t.id);
+
+        // Delete
+        const del = document.createElement("div");
+        del.className = "icon";
+        del.title = "Delete";
+        del.textContent = "🗑️";
+        del.onclick = () => deleteTask(t.id);
+
+        actions.appendChild(toggle);
+        actions.appendChild(del);
+
+        li.appendChild(left);
+        li.appendChild(actions);
+        listEl.appendChild(li);
+    }
+}
+
+function addTask(title, priority) {
+    const now = Date.now();
+    tasks.unshift({
+        id: uid(),
+        title,
+        priority,
+        createdAt: now,
+        completedAt: null
+    });
+    saveTasks();
+    render();
+}
+
+function toggleComplete(id) {
+    tasks = tasks.map(t => {
+        if (t.id !== id) return t;
+        return { ...t, completedAt: t.completedAt ? null : Date.now() };
+    });
+    saveTasks();
+    render();
+}
+
+function deleteTask(id) {
+    tasks = tasks.filter(t => t.id !== id);
+    saveTasks();
+    render();
+}
+
+function clearCompleted() {
+    tasks = tasks.filter(t => !t.completedAt);
+    saveTasks();
+    render();
+}
+
+function setView(next) {
+    view = next;
+    tabActive.classList.toggle("active", view === "active");
+    tabCompleted.classList.toggle("active", view === "completed");
+    render();
+}
+
+/* Events */
+form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const title = titleInput.value.trim();
+    const priority = Number(prioritySelect.value);
+    if (!title) return;
+    addTask(title, priority);
+    titleInput.value = "";
+    titleInput.focus();
+});
+
+searchEl.addEventListener("input", render);
+sortEl.addEventListener("change", render);
+clearCompletedBtn.addEventListener("click", clearCompleted);
+
+tabActive.addEventListener("click", () => setView("active"));
+tabCompleted.addEventListener("click", () => setView("completed"));
+
+/* Initial */
+render();
