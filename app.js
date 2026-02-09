@@ -6,7 +6,6 @@ const prioritySelect = document.getElementById("task-priority");
 const listEl = document.getElementById("list");
 const emptyEl = document.getElementById("empty");
 const countEl = document.getElementById("count");
-const searchEl = document.getElementById("search");
 const sortEl = document.getElementById("sort");
 const clearCompletedBtn = document.getElementById("clear-completed");
 
@@ -35,6 +34,7 @@ function saveTasks() {
 }
 
 function priorityLabel(p) {
+    if (p === 4) return { text: "Extremely High", cls: "p-xhigh" };
     if (p === 3) return { text: "High", cls: "p-high" };
     if (p === 2) return { text: "Medium", cls: "p-med" };
     return { text: "Low", cls: "p-low" };
@@ -54,15 +54,9 @@ function sortTasks(list) {
     return [...list].sort(byPriorityDesc); // default: priority_desc
 }
 
-function filterTasks(list) {
-    const q = searchEl.value.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter(t => t.title.toLowerCase().includes(q));
-}
-
 function visibleTasks() {
     const base = tasks.filter(t => view === "active" ? !t.completedAt : !!t.completedAt);
-    return sortTasks(filterTasks(base));
+    return sortTasks(base);
 }
 
 function render() {
@@ -79,7 +73,24 @@ function render() {
 
     clearCompletedBtn.style.display = completedCount ? "inline-flex" : "none";
 
-    for (const t of data) {
+    const extreme = data.filter(t => t.priority === 4);
+    const regular = data.filter(t => t.priority !== 4);
+
+    const ordered = [...extreme];
+    if (extreme.length && regular.length) {
+        ordered.push({ __divider: true });
+    }
+    ordered.push(...regular);
+
+    for (const t of ordered) {
+        if (t.__divider) {
+            const divider = document.createElement("li");
+            divider.className = "section-divider";
+            divider.textContent = "Other tasks";
+            listEl.appendChild(divider);
+            continue;
+        }
+
         const li = document.createElement("li");
         li.className = "item" + (t.completedAt ? " done" : "");
 
@@ -102,8 +113,21 @@ function render() {
         const d = new Date(t.createdAt);
         time.textContent = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
+        const priorityEdit = document.createElement("select");
+        priorityEdit.className = "priority-edit";
+        priorityEdit.setAttribute("aria-label", `Change priority for ${t.title}`);
+        priorityEdit.innerHTML = `
+            <option value="4">Extremely High</option>
+            <option value="3">High</option>
+            <option value="2">Medium</option>
+            <option value="1">Low</option>
+        `;
+        priorityEdit.value = String(t.priority);
+        priorityEdit.onchange = () => updatePriority(t.id, Number(priorityEdit.value));
+
         tags.appendChild(pill);
         tags.appendChild(time);
+        tags.appendChild(priorityEdit);
 
         left.appendChild(title);
         left.appendChild(tags);
@@ -132,6 +156,15 @@ function render() {
         li.appendChild(actions);
         listEl.appendChild(li);
     }
+}
+
+function updatePriority(id, nextPriority) {
+    tasks = tasks.map(t => {
+        if (t.id !== id) return t;
+        return { ...t, priority: nextPriority };
+    });
+    saveTasks();
+    render();
 }
 
 function addTask(title, priority) {
@@ -186,7 +219,6 @@ form.addEventListener("submit", (e) => {
     titleInput.focus();
 });
 
-searchEl.addEventListener("input", render);
 sortEl.addEventListener("change", render);
 clearCompletedBtn.addEventListener("click", clearCompleted);
 
