@@ -134,13 +134,6 @@ function setAddPanelOpen(open) {
     addToggleBtn.textContent = open ? "Close" : "Add Task";
 }
 
-function priorityLabel(p) {
-    if (p === 4) return { text: "Extremely High", cls: "p-xhigh" };
-    if (p === 3) return { text: "High", cls: "p-high" };
-    if (p === 2) return { text: "Medium", cls: "p-med" };
-    return { text: "Low", cls: "p-low" };
-}
-
 function sortTasks(list) {
     const mode = sortEl.value;
 
@@ -208,11 +201,6 @@ function render() {
         const tags = document.createElement("div");
         tags.className = "tags";
 
-        const pill = document.createElement("span");
-        const { text, cls } = priorityLabel(t.priority);
-        pill.className = `pill ${cls}`;
-        pill.textContent = text;
-
         const time = document.createElement("span");
         const d = new Date(t.createdAt);
         time.textContent = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -229,16 +217,11 @@ function render() {
         priorityEdit.value = String(t.priority);
         priorityEdit.onchange = () => updatePriority(t.id, Number(priorityEdit.value));
 
-        tags.appendChild(pill);
-        tags.appendChild(time);
         tags.appendChild(priorityEdit);
+        tags.appendChild(time);
 
         const details = document.createElement("div");
         details.className = "details";
-
-        const fullTitle = document.createElement("div");
-        fullTitle.className = "full-title";
-        fullTitle.textContent = t.title;
 
         const hasNotes = Boolean(t.notes && t.notes.trim());
         if (hasNotes) {
@@ -288,9 +271,6 @@ function render() {
         const isTitleCut = title.scrollWidth > title.clientWidth;
         const shouldShowMore = hasNotes || isTitleCut;
         if (shouldShowMore) {
-            if (isTitleCut) {
-                details.insertBefore(fullTitle, details.firstChild || null);
-            }
             const moreBtn = document.createElement("button");
             moreBtn.className = "show-more";
             moreBtn.type = "button";
