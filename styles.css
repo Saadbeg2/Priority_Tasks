@@ -382,8 +382,21 @@ h1 {
     min-width: 0;
 }
 
-.calendar-form .input {
+.calendar-form .label {
     min-width: 0;
+}
+
+.calendar-form .input {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.calendar-form input[type="date"],
+.calendar-form input[type="time"] {
+    min-inline-size: 0;
+    -webkit-min-logical-width: 0;
 }
 
 .calendar-error {
