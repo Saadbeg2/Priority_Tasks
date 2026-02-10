@@ -46,6 +46,7 @@ function loadTasks() {
         if (!Array.isArray(parsed)) return [];
         return parsed.map(t => ({
             ...t,
+            notes: typeof t.notes === "string" ? t.notes : "",
             finishBy: t.finishBy || t.dueDate || null,
             durationMin: Number.isFinite(Number(t.durationMin)) ? Number(t.durationMin) : null,
             calendarTime: typeof t.calendarTime === "string" ? t.calendarTime : null
@@ -101,6 +102,11 @@ function downloadCalendarEvent(currentTask, dateValue, timeValue, durationValue)
     const now = new Date();
     const uidValue = `${currentTask.id}@prioritytasks.local`;
 
+    const descriptionParts = ["Created from TaskManager"];
+    if (currentTask.notes && currentTask.notes.trim()) {
+        descriptionParts.push(`Notes: ${currentTask.notes.trim()}`);
+    }
+
     const ics = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
@@ -112,7 +118,7 @@ function downloadCalendarEvent(currentTask, dateValue, timeValue, durationValue)
         `DTSTART:${icsDateFromLocal(start)}`,
         `DTEND:${icsDateFromLocal(end)}`,
         `SUMMARY:${escapeIcsText(currentTask.title)}`,
-        "DESCRIPTION:Created from TaskManager",
+        `DESCRIPTION:${escapeIcsText(descriptionParts.join("\n"))}`,
         "END:VEVENT",
         "END:VCALENDAR"
     ].join("\r\n");

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Settings - TaskManager</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <div>
+                <h1>TaskManager</h1>
+                <p class="sub">Automation settings for priority escalation.</p>
+            </div>
+            <a class="btn ghost back-link" href="index.html">Back to Tasks</a>
+        </header>
+
+        <main class="wrap">
+            <section class="card">
+                <form id="settings-form" class="settings-form">
+                    <div class="settings-group">
+                        <label class="toggle-row" for="auto-low-medium">
+                            <span class="toggle-text">Auto move Low → Medium</span>
+                            <input id="auto-low-medium" type="checkbox" />
+                        </label>
+                        <label class="label" for="hours-low-medium">
+                            Move after X hours
+                            <input id="hours-low-medium" class="input" type="number" min="1" step="1" value="24" />
+                        </label>
+                    </div>
+
+                    <div class="settings-group">
+                        <label class="toggle-row" for="auto-medium-high">
+                            <span class="toggle-text">Auto move Medium → High</span>
+                            <input id="auto-medium-high" type="checkbox" />
+                        </label>
+                        <label class="label" for="hours-medium-high">
+                            Move after X hours
+                            <input id="hours-medium-high" class="input" type="number" min="1" step="1" value="24" />
+                        </label>
+                    </div>
+
+                    <div class="settings-group">
+                        <label class="toggle-row" for="auto-high-xhigh">
+                            <span class="toggle-text">Auto move High → Extremely High</span>
+                            <input id="auto-high-xhigh" type="checkbox" />
+                        </label>
+                        <label class="label" for="hours-high-xhigh">
+                            Move after X hours
+                            <input id="hours-high-xhigh" class="input" type="number" min="1" step="1" value="24" />
+                        </label>
+                    </div>
+
+                    <button class="btn primary" type="submit">Save Settings</button>
+                </form>
+
+                <p id="settings-msg" class="calendar-error" aria-live="polite"></p>
+            </section>
+        </main>
+    </div>
+
+    <script src="settings.js"></script>
+</body>
+
+</html>

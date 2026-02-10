@@ -57,6 +57,16 @@ select {
     padding-bottom: var(--space-3);
 }
 
+.header-actions {
+    display: grid;
+    gap: var(--space-1);
+    width: 100%;
+}
+
+.add-toggle {
+    width: 100%;
+}
+
 h1 {
     margin: 0;
     font-size: clamp(18px, 4vw, 22px);
@@ -113,6 +123,18 @@ h1 {
     gap: var(--space-2);
 }
 
+.add-panel {
+    margin-bottom: var(--space-2);
+}
+
+.add-panel.collapsed {
+    display: none;
+}
+
+.notes-field {
+    grid-column: 1 / -1;
+}
+
 .label {
     display: flex;
     flex-direction: column;
@@ -136,6 +158,11 @@ h1 {
     outline: none;
     font-size: 16px;
     max-width: 100%;
+}
+
+.textarea {
+    min-height: 88px;
+    resize: vertical;
 }
 
 .select {
@@ -230,6 +257,51 @@ h1 {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.details {
+    display: none;
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.item.expanded .details {
+    display: block;
+}
+
+.full-title {
+    color: var(--text);
+    margin-bottom: 6px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.note-block {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.show-more {
+    margin-top: 4px;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+}
+
+.show-more:hover {
+    color: var(--text);
+}
+
+.show-more:focus-visible {
+    outline: 2px solid #3f3f4a;
+    outline-offset: 2px;
+    border-radius: 4px;
 }
 
 .tags {
@@ -413,6 +485,36 @@ h1 {
     font-size: 12px;
 }
 
+.settings-form {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.settings-group {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px;
+    display: grid;
+    gap: 10px;
+    background: #101015;
+}
+
+.toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    border: 0;
+    background: transparent;
+    padding: 0;
+    color: var(--text);
+}
+
+.toggle-text {
+    font-size: 14px;
+    color: var(--text);
+}
+
 .section-divider {
     margin-top: 10px;
     padding-top: 12px;
@@ -465,6 +567,17 @@ h1 {
     .tabs {
         width: auto;
         min-width: 220px;
+    }
+
+    .header-actions {
+        width: auto;
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+
+    .add-toggle {
+        width: auto;
     }
 
     .form {

@@ -1,8 +1,12 @@
 const STORAGE_KEY = "priority_tasks_v1";
+const SETTINGS_KEY = "priority_tasks_settings_v1";
 
 const form = document.getElementById("task-form");
 const titleInput = document.getElementById("task-title");
+const notesInput = document.getElementById("task-notes");
 const prioritySelect = document.getElementById("task-priority");
+const addToggleBtn = document.getElementById("add-toggle");
+const addPanel = document.getElementById("add-panel");
 const listEl = document.getElementById("list");
 const emptyEl = document.getElementById("empty");
 const countEl = document.getElementById("count");
@@ -14,6 +18,7 @@ const tabCompleted = document.getElementById("tab-completed");
 
 let view = "active"; // "active" | "completed"
 let tasks = loadTasks();
+let settings = loadSettings();
 
 function uid() {
     return crypto?.randomUUID?.() || String(Date.now()) + Math.random().toString(16).slice(2);
@@ -26,9 +31,13 @@ function loadTasks() {
         if (!Array.isArray(parsed)) return [];
         return parsed.map(t => ({
             ...t,
+            notes: typeof t.notes === "string" ? t.notes : "",
             finishBy: t.finishBy || t.dueDate || null,
             durationMin: Number.isFinite(Number(t.durationMin)) ? Number(t.durationMin) : null,
-            calendarTime: typeof t.calendarTime === "string" ? t.calendarTime : null
+            calendarTime: typeof t.calendarTime === "string" ? t.calendarTime : null,
+            priorityUpdatedAt: Number.isFinite(Number(t.priorityUpdatedAt))
+                ? Number(t.priorityUpdatedAt)
+                : Number(t.createdAt) || Date.now()
         }));
     } catch {
         return [];
@@ -37,6 +46,92 @@ function loadTasks() {
 
 function saveTasks() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+}
+
+function loadSettings() {
+    const defaults = {
+        transitions: {
+            lowMedium: { enabled: false, hours: 24 },
+            mediumHigh: { enabled: false, hours: 24 },
+            highExtreme: { enabled: false, hours: 24 }
+        }
+    };
+    try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        const toHours = (value, fallback) => {
+            const n = Number(value);
+            return Number.isFinite(n) && n > 0 ? n : fallback;
+        };
+        const t = parsed?.transitions || {};
+        const oldEnabled = Boolean(parsed?.autoEscalateToHigh);
+        const oldHours = toHours(parsed?.escalateAfterHours, 24);
+        return {
+            transitions: {
+                lowMedium: {
+                    enabled: Boolean(t?.lowMedium?.enabled),
+                    hours: toHours(t?.lowMedium?.hours, defaults.transitions.lowMedium.hours)
+                },
+                mediumHigh: {
+                    enabled: oldEnabled || Boolean(t?.mediumHigh?.enabled),
+                    hours: toHours(t?.mediumHigh?.hours, oldHours)
+                },
+                highExtreme: {
+                    enabled: Boolean(t?.highExtreme?.enabled),
+                    hours: toHours(t?.highExtreme?.hours, defaults.transitions.highExtreme.hours)
+                }
+            }
+        };
+    } catch {
+        return defaults;
+    }
+}
+
+function runAutoEscalation() {
+    settings = loadSettings();
+    const rules = settings.transitions;
+    if (!rules) return false;
+    const now = Date.now();
+    let changed = false;
+
+    tasks = tasks.map(t => {
+        if (t.completedAt) return t;
+        const inPriorityMs = now - (Number(t.priorityUpdatedAt) || Number(t.createdAt) || now);
+
+        if (t.priority === 1 && rules.lowMedium.enabled) {
+            const threshold = rules.lowMedium.hours * 60 * 60 * 1000;
+            if (inPriorityMs >= threshold) {
+                changed = true;
+                return { ...t, priority: 2, priorityUpdatedAt: now };
+            }
+        }
+
+        if (t.priority === 2 && rules.mediumHigh.enabled) {
+            const threshold = rules.mediumHigh.hours * 60 * 60 * 1000;
+            if (inPriorityMs >= threshold) {
+                changed = true;
+                return { ...t, priority: 3, priorityUpdatedAt: now };
+            }
+        }
+
+        if (t.priority === 3 && rules.highExtreme.enabled) {
+            const threshold = rules.highExtreme.hours * 60 * 60 * 1000;
+            if (inPriorityMs >= threshold) {
+                changed = true;
+                return { ...t, priority: 4, priorityUpdatedAt: now };
+            }
+        }
+
+        return t;
+    });
+
+    return changed;
+}
+
+function setAddPanelOpen(open) {
+    addPanel.classList.toggle("collapsed", !open);
+    addToggleBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    addToggleBtn.textContent = open ? "Close" : "Add Task";
 }
 
 function priorityLabel(p) {
@@ -66,6 +161,10 @@ function visibleTasks() {
 }
 
 function render() {
+    if (runAutoEscalation()) {
+        saveTasks();
+    }
+
     const data = visibleTasks();
     listEl.innerHTML = "";
 
@@ -104,6 +203,7 @@ function render() {
         const title = document.createElement("div");
         title.className = "title";
         title.textContent = t.title;
+        title.title = t.title;
 
         const tags = document.createElement("div");
         tags.className = "tags";
@@ -133,8 +233,24 @@ function render() {
         tags.appendChild(time);
         tags.appendChild(priorityEdit);
 
+        const details = document.createElement("div");
+        details.className = "details";
+
+        const fullTitle = document.createElement("div");
+        fullTitle.className = "full-title";
+        fullTitle.textContent = t.title;
+
+        const hasNotes = Boolean(t.notes && t.notes.trim());
+        if (hasNotes) {
+            const noteBlock = document.createElement("div");
+            noteBlock.className = "note-block";
+            noteBlock.textContent = t.notes.trim();
+            details.appendChild(noteBlock);
+        }
+
         left.appendChild(title);
         left.appendChild(tags);
+        left.appendChild(details);
 
         const actions = document.createElement("div");
         actions.className = "actions";
@@ -168,16 +284,39 @@ function render() {
         li.appendChild(left);
         li.appendChild(actions);
         listEl.appendChild(li);
+
+        const isTitleCut = title.scrollWidth > title.clientWidth;
+        const shouldShowMore = hasNotes || isTitleCut;
+        if (shouldShowMore) {
+            if (isTitleCut) {
+                details.insertBefore(fullTitle, details.firstChild || null);
+            }
+            const moreBtn = document.createElement("button");
+            moreBtn.className = "show-more";
+            moreBtn.type = "button";
+            moreBtn.textContent = "Show more";
+            let expanded = false;
+            moreBtn.onclick = () => {
+                expanded = !expanded;
+                li.classList.toggle("expanded", expanded);
+                moreBtn.textContent = expanded ? "Show less" : "Show more";
+            };
+            left.appendChild(moreBtn);
+        } else {
+            details.remove();
+        }
     }
 }
 
-function addTask(title, priority) {
+function addTask(title, priority, notes) {
     const now = Date.now();
     tasks.unshift({
         id: uid(),
         title,
+        notes,
         priority,
         createdAt: now,
+        priorityUpdatedAt: now,
         completedAt: null,
         finishBy: null,
         durationMin: null,
@@ -190,8 +329,13 @@ function addTask(title, priority) {
 function updatePriority(id, nextPriority) {
     tasks = tasks.map(t => {
         if (t.id !== id) return t;
-        if (nextPriority === 4) return { ...t, priority: nextPriority };
-        return { ...t, priority: nextPriority, finishBy: null, durationMin: null, calendarTime: null, dueDate: null };
+        const base = {
+            ...t,
+            priority: nextPriority,
+            priorityUpdatedAt: Date.now()
+        };
+        if (nextPriority === 4) return base;
+        return { ...base, finishBy: null, durationMin: null, calendarTime: null, dueDate: null };
     });
     saveTasks();
     render();
@@ -228,11 +372,22 @@ function setView(next) {
 form.addEventListener("submit", (e) => {
     e.preventDefault();
     const title = titleInput.value.trim();
+    const notes = notesInput.value.trim();
     const priority = Number(prioritySelect.value);
     if (!title) return;
-    addTask(title, priority);
+    addTask(title, priority, notes);
     titleInput.value = "";
+    notesInput.value = "";
+    setAddPanelOpen(false);
     titleInput.focus();
+});
+
+addToggleBtn.addEventListener("click", () => {
+    const nextOpen = addPanel.classList.contains("collapsed");
+    setAddPanelOpen(nextOpen);
+    if (nextOpen) {
+        titleInput.focus();
+    }
 });
 
 sortEl.addEventListener("change", render);
@@ -241,4 +396,5 @@ clearCompletedBtn.addEventListener("click", clearCompleted);
 tabActive.addEventListener("click", () => setView("active"));
 tabCompleted.addEventListener("click", () => setView("completed"));
 
+setAddPanelOpen(false);
 render();
