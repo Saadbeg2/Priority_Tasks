@@ -397,6 +397,13 @@ h1 {
 .calendar-form input[type="time"] {
     min-inline-size: 0;
     -webkit-min-logical-width: 0;
+    inline-size: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.calendar-page .card {
+    overflow: hidden;
 }
 
 .calendar-error {
