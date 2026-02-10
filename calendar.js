@@ -104,7 +104,7 @@ function downloadCalendarEvent(currentTask, dateValue, timeValue, durationValue)
     const ics = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//Priority Tasks//EN",
+        "PRODID:-//TaskManager//EN",
         "CALSCALE:GREGORIAN",
         "BEGIN:VEVENT",
         `UID:${uidValue}`,
@@ -112,7 +112,7 @@ function downloadCalendarEvent(currentTask, dateValue, timeValue, durationValue)
         `DTSTART:${icsDateFromLocal(start)}`,
         `DTEND:${icsDateFromLocal(end)}`,
         `SUMMARY:${escapeIcsText(currentTask.title)}`,
-        "DESCRIPTION:Created from Priority Tasks",
+        "DESCRIPTION:Created from TaskManager",
         "END:VEVENT",
         "END:VCALENDAR"
     ].join("\r\n");

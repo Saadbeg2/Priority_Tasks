@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Calendar Setup - Priority Tasks</title>
+    <title>Calendar Setup - TaskManager</title>
     <link rel="stylesheet" href="styles.css" />
 </head>
 
@@ -12,8 +12,8 @@
     <div class="container calendar-page">
         <header class="header">
             <div>
-                <h1>Calendar Setup</h1>
-                <p class="sub">Configure event details and download an .ics file.</p>
+                <h1>TaskManager</h1>
+                <p class="sub">Configure event details and add to iCalendar.</p>
             </div>
             <a class="btn ghost back-link" href="index.html">Back to Tasks</a>
         </header>
@@ -38,7 +38,7 @@
                         <input id="event-duration" class="input" type="number" min="15" step="15" value="60" required />
                     </label>
 
-                    <button class="btn primary" type="submit">Download .ics</button>
+                    <button class="btn primary" type="submit">Add to iCalendar</button>
                 </form>
 
                 <p id="calendar-error" class="calendar-error" role="alert"></p>

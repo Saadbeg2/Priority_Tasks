@@ -134,6 +134,8 @@ h1 {
     border-radius: 12px;
     padding: 10px 12px;
     outline: none;
+    font-size: 16px;
+    max-width: 100%;
 }
 
 .select {
@@ -374,6 +376,14 @@ h1 {
     display: grid;
     gap: var(--space-2);
     grid-template-columns: 1fr;
+}
+
+.calendar-form > * {
+    min-width: 0;
+}
+
+.calendar-form .input {
+    min-width: 0;
 }
 
 .calendar-error {
